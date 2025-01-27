@@ -1,0 +1,89 @@
+import React from "react";
+import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import { Card, CardContent, Button } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import firebase from "firebase/app";
+import "firebase/database";
+
+// Firebase Configuration
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  databaseURL: "YOUR_DATABASE_URL",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID",
+};
+
+// Initialize Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+const database = firebase.database();
+
+const containerStyle = {
+  width: "100%",
+  height: "100vh",
+};
+
+const center = {
+  lat: 20.5937, // Default center: India coordinates
+  lng: 78.9629,
+};
+
+const BusTracking = () => {
+  const [busLocations, setBusLocations] = useState([]);
+
+  useEffect(() => {
+    const busRef = database.ref("buses");
+    busRef.on("value", (snapshot) => {
+      const data = snapshot.val();
+      const locations = Object.keys(data || {}).map((busId) => ({
+        id: busId,
+        ...data[busId],
+      }));
+      setBusLocations(locations);
+    });
+
+    return () => busRef.off();
+  }, []);
+
+  return (
+    <div className="flex flex-col h-screen">
+      <header className="p-4 bg-blue-600 text-white text-xl font-bold">
+        Bus E - Real-Time Tracking
+      </header>
+      <main className="flex-1">
+        <LoadScript googleMapsApiKey="YOUR_GOOGLE_MAPS_API_KEY">
+          <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={5}>
+            {busLocations.map((bus) => (
+              <Marker
+                key={bus.id}
+                position={{ lat: bus.lat, lng: bus.lng }}
+                label={bus.id}
+              />
+            ))}
+          </GoogleMap>
+        </LoadScript>
+      </main>
+      <footer className="p-4 bg-gray-800 text-white">
+        <Card>
+          <CardContent>
+            <h2 className="text-lg font-semibold">Bus Details</h2>
+            {busLocations.map((bus) => (
+              <div key={bus.id} className="mt-2">
+                <p><strong>Bus ID:</strong> {bus.id}</p>
+                <p><strong>Latitude:</strong> {bus.lat}</p>
+                <p><strong>Longitude:</strong> {bus.lng}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </footer>
+    </div>
+  );
+};
+
+export default BusTracking;
