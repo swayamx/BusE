@@ -1,0 +1,7 @@
+Frontend (React)
+    ↓
+Flask API (Auth + ML + Insights)
+    ↓
+PostgreSQL DB
+    ↓
+ML Model (scikit-learn)
