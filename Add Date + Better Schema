@@ -1,0 +1,9 @@
+CREATE TABLE bu_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bu_name TEXT,
+    date TEXT,
+    hour INTEGER,
+    usage INTEGER,
+    mood INTEGER,
+    productivity INTEGER
+);
