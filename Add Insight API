@@ -1,0 +1,11 @@
+@app.route('/insights', methods=['GET'])
+def insights():
+    df = pd.read_sql_query("SELECT * FROM bu_data", conn)
+
+    alerts = []
+
+    for _, row in df.iterrows():
+        if row['usage'] > 8 and row['mood'] < 4:
+            alerts.append(f"{row['bu_name']} burnout risk")
+
+    return jsonify(alerts)
