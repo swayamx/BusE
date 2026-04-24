@@ -1,0 +1,97 @@
+from flask import Flask, request, jsonify
+import sqlite3
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+
+app = Flask(__name__)
+
+# ---------------- DATABASE ----------------
+conn = sqlite3.connect("bu_tracking.db", check_same_thread=False)
+cursor = conn.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS bu_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bu_name TEXT,
+    hour INTEGER,
+    usage INTEGER,
+    mood INTEGER,
+    productivity INTEGER
+)
+""")
+conn.commit()
+
+# ---------------- INSERT DATA ----------------
+@app.route('/add', methods=['POST'])
+def add_data():
+    data = request.json
+
+    cursor.execute("""
+    INSERT INTO bu_data (bu_name, hour, usage, mood, productivity)
+    VALUES (?, ?, ?, ?, ?)
+    """, (
+        data['bu_name'],
+        data['hour'],
+        data['usage'],
+        data['mood'],
+        data['productivity']
+    ))
+
+    conn.commit()
+    return jsonify({"message": "Data added successfully"})
+
+# ---------------- FETCH DATA ----------------
+@app.route('/data', methods=['GET'])
+def get_data():
+    cursor.execute("SELECT * FROM bu_data")
+    rows = cursor.fetchall()
+
+    return jsonify(rows)
+
+# ---------------- ANALYTICS ----------------
+@app.route('/analytics', methods=['GET'])
+def analytics():
+    df = pd.read_sql_query("SELECT * FROM bu_data", conn)
+
+    if df.empty:
+        return jsonify({"message": "No data available"})
+
+    avg_productivity = df.groupby('bu_name')['productivity'].mean().to_dict()
+
+    return jsonify({
+        "average_productivity_per_BU": avg_productivity
+    })
+
+# ---------------- ML MODEL ----------------
+def train_model():
+    df = pd.read_sql_query("SELECT * FROM bu_data", conn)
+
+    if len(df) < 5:
+        return None
+
+    X = df[['hour', 'usage', 'mood']]
+    y = df['productivity']
+
+    model = RandomForestClassifier()
+    model.fit(X, y)
+
+    return model
+
+# ---------------- PREDICT ----------------
+@app.route('/predict', methods=['POST'])
+def predict():
+    model = train_model()
+
+    if model is None:
+        return jsonify({"message": "Not enough data to train model"})
+
+    data = request.json
+    input_data = [[data['hour'], data['usage'], data['mood']]]
+
+    prediction = model.predict(input_data)
+
+    return jsonify({"predicted_productivity": int(prediction[0])})
+
+# ---------------- RUN ----------------
+if __name__ == '__main__':
+    app.run(debug=True)
