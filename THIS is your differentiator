@@ -1,0 +1,5 @@
+if usage > 8 and mood < 4:
+    return "⚠️ Burnout Risk High"
+
+if productivity < 3 for 3 days:
+    return "⚠️ Performance Declining"
