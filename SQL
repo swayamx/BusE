@@ -1,1 +1,46 @@
-date TEXT
+-- =========================
+-- CREATE DATABASE
+-- =========================
+CREATE DATABASE busE_system;
+
+-- Connect to database before running below
+-- \c busE_system;
+
+-- =========================
+-- USERS TABLE (AUTH)
+-- =========================
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================
+-- USER ACTIVITY TABLE
+-- =========================
+CREATE TABLE user_activity (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    action_type VARCHAR(50),
+    action_value FLOAT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================
+-- ML PREDICTIONS TABLE
+-- =========================
+CREATE TABLE predictions (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    prediction_result FLOAT,
+    model_version VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================
+-- INDEXES (PERFORMANCE)
+-- =========================
+CREATE INDEX idx_user_activity_user_id ON user_activity(user_id);
+CREATE INDEX idx_predictions_user_id ON predictions(user_id);
